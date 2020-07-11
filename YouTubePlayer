@@ -37,7 +37,7 @@ elif [ $CMD = "update" ]; then
 
 elif [ $CMD = "run" ]; then
   echo "Opening YouTube Player"
-  exec ./main.py
+  python3 ./main.py
 
 else
   echo "Unknown option \"" $CMD "\""

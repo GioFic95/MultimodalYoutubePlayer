@@ -1,6 +1,6 @@
 import urllib
 import json
-
+import ctypes
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
@@ -72,6 +72,14 @@ def readFromConfig():
     data = json.loads(data)
     f.close()
     return data
+
+
+def get_window_pointer(window):
+    """ Use the window.__gpointer__ PyCapsule to get the C void* pointer to the window.
+        From https://github.com/oaubert/python-vlc/blob/master/examples/gtkvlc.py."""
+    ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
+    ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object]
+    return ctypes.pythonapi.PyCapsule_GetPointer(window.__gpointer__, None)
 
 
 class SearchBox(Gtk.Frame):

@@ -6,10 +6,13 @@ from mutagen import mp4
 import urllib
 import threading
 import os
+import sys
 from time import time
 from random import shuffle
+import ctypes
+from youtube_dl.utils import DownloadError
 
-##
+# internal imports
 import core.helpwindow as helpwindow
 from core import util
 from mpris.mpris import *
@@ -402,7 +405,8 @@ class YouTubePlayer(Gtk.Window):
                 img = Gtk.Image.new_from_gicon(
                     Gio.ThemedIcon(name="media-playback-pause-symbolic"),
                     Gtk.IconSize.BUTTON)
-                self.player.play()
+                GObject.idle_add(self.player.play)
+                print("play 1")
                 self.playButton.set_image(img)
                 self.mpris.PlaybackStatus = "Playing"
                 self.mpris.Rate = 1.0
@@ -509,7 +513,25 @@ class YouTubePlayer(Gtk.Window):
             self._playPlaylist()
 
     def _realized(self, widget, data=None):
-        self.windowID = widget.get_window().get_xid()
+        """From https://github.com/oaubert/python-vlc/blob/master/examples/gtkvlc.py."""
+        if not widget.get_window().ensure_native():
+            print("Error - video playback requires a native window")
+        if sys.platform == "win32":
+            gdkdll = ctypes.CDLL('libgdk-3-0.dll')
+            handle = gdkdll.gdk_win32_window_get_handle(util.get_window_pointer(widget.get_window()))
+            print("\nhandle", handle)
+            self.player.set_hwnd(handle)
+        elif sys.platform == 'darwin':
+            gdkdll = ctypes.CDLL('libgdk-3.0.dll')
+            get_nsview = gdkdll.gdk_quaerz_window_get_nsview
+            get_nsview.restype, get_nsview.argtypes = [ctypes.c_void_p], ctypes.c_void_p
+            nsobject = get_nsview(util.get_window_pointer(widget.get_window()))
+            print("\nnsobject", nsobject)
+            self.player.set_nsobject(nsobject)
+        else:
+            xid = widget.get_window().get_xid()
+            self.player.set_xwindow(xid)
+            print("\nxid", xid)
 
     def _playPlaylist(self):
         try:
@@ -587,7 +609,8 @@ class YouTubePlayer(Gtk.Window):
                     self.next(None)
                 return
             self.player.set_mrl(audio_url)
-            self.player.play()
+            GObject.idle_add(self.player.play)
+            print("play 2")
 
         else:
             GObject.idle_add(
@@ -607,12 +630,11 @@ class YouTubePlayer(Gtk.Window):
                     "Can't play the requested video",
                     priority=GObject.PRIORITY_DEFAULT)
                 return
-            # TODO
-            self.player.set_xwindow(self.windowID)
             self.player.video_set_mouse_input(False)
             GObject.idle_add(self.videoEventbox.show)
             self.player.set_mrl(video_url)
-            self.player.play()
+            GObject.idle_add(self.player.play)
+            print("play 3")
 
         if not self.is_active() and metadata is not None:
             icon_path = os.path.realpath('images/icons/yt-icon.png')
@@ -715,16 +737,18 @@ class YouTubePlayer(Gtk.Window):
             priority=GObject.PRIORITY_DEFAULT)
 
     def _downloadAudio(self, video):
-        filepath = os.environ.get(
-            'HOME') + '/Downloads/YouTubePlayer/' + video.title + '[audio].m4a'
+        print("download audio")
+        download_path = os.environ.get('HOME') + '/Downloads/YouTubePlayer/'
+        if not os.path.exists(download_path):
+            print(download_path, "does not exist")
+            os.makedirs(download_path)
+        filepath = download_path + video.title + '[audio].m4a'
         audio = video.m4astreams[-1]
         try:
-            audio.download(
-                filepath, quiet=False, callback=self._setdownloadETA)
-        except FileNotFoundError:
-            os.makedirs(os.environ.get('HOME') + '/Downloads/YouTubePlayer')
-            audio.getbestaudio(preftype="m4a").download(
-                filepath, quiet=False, callback=self._setdownloadETA)
+            audio.download(filepath, quiet=False, callback=self._setdownloadETA)
+        except DownloadError:
+            GObject.idle_add(self.infoLabel.set_text, "Can't download this video.")
+            return
 
         metadata = self._getMetadata(video)
         if metadata is None:
@@ -749,36 +773,31 @@ class YouTubePlayer(Gtk.Window):
         self.infoLabel.set_text('Metadata fixed')
 
     def _downloadVideo(self, video):
+        print("download vodep")
+        download_path = os.environ.get('HOME') + '/Downloads/YouTubePlayer/'
+        if not os.path.exists(download_path):
+            print(download_path, "does not exist")
+            os.makedirs(download_path)
         try:
             video.getbest(preftype="mp4").download(
-                filepath=os.environ.get('HOME') + '/Downloads/YouTubePlayer/' +
-                video.title + '.' + video.getbest().extension,
+                filepath=download_path + video.title + '.' + video.getbest().extension,
                 quiet=False,
                 callback=self._setdownloadETA)
-        except FileNotFoundError:
-            os.makedirs(os.environ.get('HOME') + '/Downloads/YouTubePlayer')
-            video.getbest(preftype="mp4").download(
-                filepath=os.environ.get('HOME') + '/Downloads/YouTubePlayer/' +
-                video.title + '.' + video.getbest().extension,
-                quiet=False,
-                callback=self._setdownloadETA)
+        except DownloadError:
+            GObject.idle_add(self.infoLabel.set_text, "Can't download this video.")
 
     def audioOnly(self, widget):
         self.CONFIG['AUDIO_ONLY'] = not widget.get_active()
         return
 
     def _showHelp(self, widget):
-
         global window
-
-        # if window == None :
         window = helpwindow.helpWindow()
         window.set_modal(self)
         window.set_transient_for(self)
         window.set_destroy_with_parent(True)
         window.connect("delete-event", window.buttonClicked)
         window.show_function()
-        # Gtk.main()
         return
 
     def shuffle(self, widget):
