@@ -19,7 +19,6 @@ from mpris.mpris import *
 from pydbus import SessionBus
 import pkg_resources
 import vlc
-##
 
 ENTER = 65293
 ESCAPE = 65307
@@ -37,14 +36,18 @@ gi.require_version('Gtk', '3.0')
 gi.require_version('Notify', '0.7')
 from gi.repository import Gtk, Gio, GLib, GObject, Notify
 
-Notify.init('YouTube Player')
+Notify.init('Multimodal YouTube Player')
 
 oldTime = 0
 instance = vlc.Instance('--no-xlib')
 
 
-class YouTubePlayer(Gtk.Window):
-    def __init__(self):
+class YouTubePlayer(Gtk.Box):
+    def __init__(self, window, mainBox, headerBar, infoLabel):
+        Gtk.Box.__init__(self)
+        self.mainBox = mainBox
+        self.infoLabel = infoLabel
+        self.window = window
 
         self.MINIMAL_INTERFACE = False
         self.player = instance.media_player_new()
@@ -72,67 +75,33 @@ class YouTubePlayer(Gtk.Window):
 
         Gtk.Settings.get_default().props.gtk_error_bell = False
 
-        ##
-        # Metadata
-
-        self.title = "YouTubePlayer"
-        ##
-        Gtk.Window.__init__(self)
-        # self.set_border_width(10)
-        self.set_size_request(520, 100)
-
-        # Title bar tweaks
-        headerBar = Gtk.HeaderBar()
-        headerBar.set_show_close_button(True)
-        self.set_titlebar(headerBar)
-        self.set_resizable(False)
-        #
-
-        ####################################################################
-        # Main Box: All widgets are inside this
-        superBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.add(superBox)
-        self.mainBox = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        self.mainBox.set_property('margin', 10)
-        self.mainBox.set_size_request(400, 100)
-
-        ##
-
         # Video box
+        superBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        window.add(superBox)
+
         self.videoEventbox = Gtk.EventBox()
         self.videoEventbox.set_property("margin", 0)
         self.videoEventbox.connect('button-press-event', self.clickOnVideo)
         self.video = Gtk.DrawingArea()
         self.video.set_size_request(500, 250)
-
         self.video.connect('realize', self._realized)
         self.video.connect('draw', self.onDraw)
         self.videoEventbox.add(self.video)
 
         superBox.pack_start(self.videoEventbox, True, True, 0)
-        superBox.pack_start(self.mainBox, True, True, 0)
-
-        ###
-
-        # Label
-
-        self.infoLabel = Gtk.Label("YouTubePlayer")
-        self.infoLabel.set_line_wrap(True)
-        self.mainBox.pack_start(self.infoLabel, True, True, 0)
-        #
+        superBox.pack_start(mainBox, True, True, 0)
 
         # Input box
         self.entry = Gtk.Entry()
         self.entry.set_placeholder_text("URL")
-        self.mainBox.pack_start(self.entry, True, True, 0)
+        mainBox.pack_start(self.entry, True, True, 0)
 
         #############################################################
         # Button for 2nd line, checkbox and download button
         #
         # Check box
         checkButtonBox = Gtk.Box(spacing=10)
-        self.mainBox.pack_start(checkButtonBox, True, True, 0)
+        mainBox.pack_start(checkButtonBox, True, True, 0)
         self.audioOnlyButton = Gtk.CheckButton("With Video                   ")
         self.audioOnlyButton.connect('toggled', self.audioOnly)
         self.audioOnlyButton.set_focus_on_click(False)
@@ -189,10 +158,7 @@ class YouTubePlayer(Gtk.Window):
         dliBox.pack_start(self.searchButton, True, True, 0)
 
         #############################################################
-
-        #############################################################
         # Box for lower buttons
-        #
 
         self.buttonBox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         Gtk.StyleContext.add_class(self.buttonBox.get_style_context(),
@@ -266,7 +232,6 @@ class YouTubePlayer(Gtk.Window):
             self.searchResults += [util.SearchBox()]
             self.searchBox.pack_start(self.searchResults[i], True, True, 0)
 
-    #    seekBox.pack_start(self.seekBar, True, True, 0)
         headerBar.pack_end(self.totalTime)
         GLib.timeout_add_seconds(1, self._setSeekBar)
 
@@ -278,9 +243,6 @@ class YouTubePlayer(Gtk.Window):
         bus = SessionBus()
         bus.publish('org.mpris.MediaPlayer2.YouTubePlayer', self.mpris,
                     ("/org/mpris/MediaPlayer2", self.mpris))
-        ##
-
-        #############################################################
 
     def onDraw(self, w, cr):
         cr.set_source_rgb(0, 0, 0)
@@ -351,8 +313,8 @@ class YouTubePlayer(Gtk.Window):
             self.searchBox.hide()
             self.SEARCHED = False
 
-    def show(self):
-        self.show_all()
+    def show(self, window):
+        window.show_all()
         self.seekBar.hide()
         self.currentTime.hide()
         self.totalTime.hide()
@@ -587,7 +549,7 @@ class YouTubePlayer(Gtk.Window):
 
         if self.CONFIG['AUDIO_ONLY'] is True:
             GObject.idle_add(
-                self.set_resizable, False, priority=GObject.PRIORITY_DEFAULT)
+                self.window.set_resizable, False, priority=GObject.PRIORITY_DEFAULT)
             GObject.idle_add(self.videoEventbox.hide)
             # self.showAllButton.hide()
             try:
@@ -614,7 +576,7 @@ class YouTubePlayer(Gtk.Window):
 
         else:
             GObject.idle_add(
-                self.set_resizable, True, priority=GObject.PRIORITY_DEFAULT)
+                self.window.set_resizable, True, priority=GObject.PRIORITY_DEFAULT)
             try:
                 if self.CONFIG['VID_QUALITY'] == 'High':
                     video_url = video.getbest().url
@@ -636,7 +598,7 @@ class YouTubePlayer(Gtk.Window):
             GObject.idle_add(self.player.play)
             print("play 3")
 
-        if not self.is_active() and metadata is not None:
+        if not self.window.is_active() and metadata is not None:
             icon_path = os.path.realpath('images/icons/yt-icon.png')
             Notify.Notification.new(
                 metadata['track_title'],
