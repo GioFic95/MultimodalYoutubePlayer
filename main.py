@@ -48,7 +48,7 @@ class MainWindow(Gtk.Window):
     def keyPressed(self, widget, event, data=None):
         if self.youtube.entry.is_visible():
             self.youtube.keyPressed(widget, event, data)
-        elif self.login.submit_button.is_visible():
+        elif self.login.login_button.is_visible():
             self.login.keyPressed(widget, event, data)
 
 
