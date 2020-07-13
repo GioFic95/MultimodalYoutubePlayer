@@ -1,11 +1,23 @@
 import urllib
 import json
 import ctypes
+import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-API_KEY = 'AIzaSyDvysm00R5FClmqtxcATsgpKHdt2GxCaiU'
+CONFIG_FILE = "data.json"
+
+
+def get_property(property):
+    with open(CONFIG_FILE, 'r') as f:
+        data = json.load(f)
+        return data[property]
+
+
+API_KEY = get_property("api_key")
+DB_NAME = get_property("db_name")
 
 
 def _getYTResultURL(query):
@@ -101,3 +113,27 @@ class SearchBox(Gtk.Frame):
     def setTitleAndId(self, title, ytid):
         self.title.set_text(title)
         self.ytid = ytid
+
+
+def execute_query(query, db=DB_NAME):
+    psql_user = get_property("psql_user")
+    psql_psw = get_property("psql_password")
+    db_name = "" if db == "" else f" dbname={db}"
+    con = psycopg2.connect(f"user={psql_user} password='{psql_psw}'{db_name}")
+    con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    cursor = con.cursor()
+    cursor.execute(query)
+    return cursor
+
+
+def create_db():
+    query = f"CREATE DATABASE {DB_NAME};"
+    execute_query(query, db="")
+    query = "CREATE TABLE users (id serial PRIMARY KEY, username varchar not null, psw varchar not null, deaf boolean);"
+    execute_query(query)
+
+
+def check_db():
+    cur = execute_query("SELECT datname FROM pg_database;", db="")
+    list_database = cur.fetchall()
+    return (DB_NAME,) in list_database

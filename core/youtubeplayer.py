@@ -15,7 +15,7 @@ from youtube_dl.utils import DownloadError
 # internal imports
 import core.helpwindow as helpwindow
 from core import util
-from mpris.mpris import *
+from core.mpris.mpris import *
 from pydbus import SessionBus
 import pkg_resources
 import vlc
@@ -100,17 +100,17 @@ class YouTubePlayer(Gtk.Box):
         # Button for 2nd line, checkbox and download button
         #
         # Check box
-        checkButtonBox = Gtk.Box(spacing=10)
-        mainBox.pack_start(checkButtonBox, True, True, 0)
+        self.checkButtonBox = Gtk.Box(spacing=10)
+        mainBox.pack_start(self.checkButtonBox, True, True, 0)
         self.audioOnlyButton = Gtk.CheckButton("With Video                   ")
         self.audioOnlyButton.connect('toggled', self.audioOnly)
         self.audioOnlyButton.set_focus_on_click(False)
-        checkButtonBox.pack_start(self.audioOnlyButton, True, True, 0)
+        self.checkButtonBox.pack_start(self.audioOnlyButton, True, True, 0)
 
         # Download and info Box
         dliBox = Gtk.Box(spacing=10)
         dliBox.set_size_request(50, 10)
-        checkButtonBox.pack_start(dliBox, True, True, 0)
+        self.checkButtonBox.pack_start(dliBox, True, True, 0)
 
         # Download button
 
@@ -314,6 +314,17 @@ class YouTubePlayer(Gtk.Box):
             self.SEARCHED = False
 
     def show(self, window):
+        window.show_all()
+        self.seekBar.hide()
+        self.currentTime.hide()
+        self.totalTime.hide()
+        self.videoEventbox.hide()
+        self.searchBox.hide()
+        self.buttonBox.hide()
+        self.entry.hide()
+        self.checkButtonBox.hide()
+
+    def show_button(self, window):
         window.show_all()
         self.seekBar.hide()
         self.currentTime.hide()

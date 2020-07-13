@@ -7,10 +7,10 @@ gi.require_version('Gtk', '3.0')
 gi.require_version('Notify', '0.7')
 from gi.repository import Gtk, Notify
 
+from core import youtubeplayer, login, util
+
 Notify.init('Multimodal YouTube Player')
 instance = vlc.Instance('--no-xlib')
-
-import youtubeplayer
 
 
 class MainWindow(Gtk.Window):
@@ -31,22 +31,35 @@ class MainWindow(Gtk.Window):
         mainBox.set_property('margin', 10)
         mainBox.set_size_request(400, 100)
 
-        # Label
+        # Title
         infoLabel = Gtk.Label(label="Multimodal YouTubePlayer")
         infoLabel.set_line_wrap(True)
         mainBox.pack_start(infoLabel, True, True, 0)
+
+        # Login
+        self.login = login.LoginBox(self, mainBox, infoLabel)
+        mainBox.pack_start(self.login, True, True, 0)
+        self.login.show(self)
 
         # YouTube
         self.youtube = youtubeplayer.YouTubePlayer(self, mainBox, headerBar, infoLabel)
         self.youtube.show(self)
 
     def keyPressed(self, widget, event, data=None):
-        self.youtube.keyPressed(widget, event, data)
+        if self.youtube.entry.is_visible():
+            self.youtube.keyPressed(widget, event, data)
+        elif self.login.submit_button.is_visible():
+            self.login.keyPressed(widget, event, data)
 
+
+if not util.check_db():
+    print("creating DB...")
+    util.create_db()
 
 window = MainWindow()
 window.set_icon_from_file('images/icons/youtube.svg')
 window.connect("delete-event", Gtk.main_quit)
 window.connect('key-release-event', window.keyPressed)
+window.login.username_entry.grab_focus()
 
 Gtk.main()
