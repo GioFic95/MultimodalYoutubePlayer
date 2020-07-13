@@ -1,3 +1,4 @@
+import hashlib
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
@@ -31,7 +32,8 @@ class LoginBox(Gtk.Box):
         mainBox.pack_start(self.submit_button, True, True, 0)
 
     def submit(self, button):
-        query = f"SELECT * FROM users WHERE username='{self.username_entry.get_text()}' AND psw='{self.password_entry.get_text()}';"
+        psw = hashlib.sha256(self.password_entry.get_text().encode()).hexdigest()
+        query = f"SELECT * FROM users WHERE username='{self.username_entry.get_text()}' AND psw='{psw}';"
         users = util.execute_query(query).fetchall()
 
         if len(users) == 1:

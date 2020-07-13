@@ -129,7 +129,7 @@ def execute_query(query, db=DB_NAME):
 def create_db():
     query = f"CREATE DATABASE {DB_NAME};"
     execute_query(query, db="")
-    query = "CREATE TABLE users (id serial PRIMARY KEY, username varchar not null, psw varchar not null, deaf boolean);"
+    query = "CREATE TABLE users (id serial PRIMARY KEY, username varchar not null unique, psw varchar not null, deaf boolean);"
     execute_query(query)
 
 
