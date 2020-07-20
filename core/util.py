@@ -16,7 +16,7 @@ def get_property(property):
         return data[property]
 
 
-API_KEY = get_property("api_key")
+API_KEY = get_property("yt_api_key")
 DB_NAME = get_property("db_name")
 
 

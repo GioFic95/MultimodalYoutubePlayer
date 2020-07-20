@@ -567,8 +567,7 @@ class YouTubePlayer(Gtk.Box):
                 if self.CONFIG['AUD_QUALITY'] == 'High':
                     audio_url = video.getbestaudio().url
                 elif self.CONFIG['AUD_QUALITY'] == 'Medium':
-                    audio_url = video.audiostreams[len(video.audiostreams) //
-                                                   2].url
+                    audio_url = video.audiostreams[len(video.audiostreams) // 2].url
                 elif self.CONFIG['AUD_QUALITY'] == 'Low':
                     audio_url = video.audiostreams[0].url
             except OSError:
@@ -836,8 +835,8 @@ class YouTubePlayer(Gtk.Box):
         return metadata
 
     def _getMetadataFromLastfm(self, artist, track):
-
-        url = 'http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=12dec50313f885d407cf8132697b8712&'
+        api_key = util.get_property("audio_api_key")
+        url = f'http://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key={api_key}&'
         url += urllib.parse.urlencode({"artist": artist}) + '&'
         url += urllib.parse.urlencode({"track": track}) + '&'
         url += '&format=json'
