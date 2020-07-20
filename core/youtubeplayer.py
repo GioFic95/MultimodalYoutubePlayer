@@ -285,7 +285,7 @@ class YouTubePlayer(Gtk.Box):
         return
 
     def repeatButtonClicked(self, w):
-        return
+        return  # todo?
 
     def searchButtonClicked(self, w):
         if not self.SEARCHED:
@@ -646,6 +646,18 @@ class YouTubePlayer(Gtk.Box):
         if self.vidNo != 0:
             self.vidNo -= 1
             self._playPlaylist()
+
+    def volume_up(self, widget):
+        self.player.audio_set_volume(min(self.player.audio_get_volume()+10, 100))
+
+    def volume_down(self, widget):
+        self.player.audio_set_volume(max(self.player.audio_get_volume()-10, 0))
+
+    def toggle_mute(self, widget):
+        if self.player.audio_get_mute():
+            self.player.audio_set_mute(False)
+        else:
+            self.player.audio_set_mute(True)
 
     def seek(self, sc, value, ud):
         # WTF TODO

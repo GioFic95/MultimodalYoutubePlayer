@@ -18,6 +18,8 @@ from core import youtubeplayer, login, util
 Notify.init('Multimodal YouTube Player')
 instance = vlc.Instance('--no-xlib')
 
+DELAY = 1.5
+
 
 class MainWindow(Gtk.Window):
     def __init__(self):
@@ -64,35 +66,57 @@ class MainWindow(Gtk.Window):
 
     def web_capture(self):
         print("start web capture")
+        cam = cv.VideoCapture(0)
         img_counter = 0
+        ts = time.time()
         while self.running:
-            time.sleep(1.5)
-            cam = cv.VideoCapture(0)
-            if self.youtube.entry.is_visible():
-                ret, frame = cam.read()
-                if not ret:
-                    print("failed to grab frame")
-                    continue
-                img_name = f"images/test-img/opencv_frame_{img_counter}.png"
-                cv.imwrite(img_name, frame)
-                print(f"{img_name} written!")
+            # time.sleep(1.5)
+            ret = cam.grab()
+            if not ret:
+                print("failed to grab frame")
+                continue
+            if time.time() - ts >= DELAY:
+                if self.youtube.entry.is_visible():
+                    ret, frame = cam.retrieve()
+                    if not ret:
+                        print("failed to retrieve frame")
+                        continue
 
-                url = 'https://api-us.faceplusplus.com/humanbodypp/v1/gesture'
-                files = {
-                    'api_key': (None, util.get_property("gest_api_key")),
-                    'api_secret': (None, util.get_property("gest_api_secret")),
-                    'image_file': ('images/test-img/opencv_frame_0.png', open('images/test-img/opencv_frame_0.png', 'rb')),
-                    'return_gesture': (None, '1'),
-                }
-                x = requests.post(url, files=files)
-                hands = json.loads(x.text)['hands']
-                print("hands:", hands)
-                for h in hands:
-                    gesture = Counter(h["gesture"]).most_common(1)[0][0]
-                    print(gesture)
-                    # GLib.idle_add(self.infoLabel.set_text, "TRE")
+                    img_name = f"images/test-img/opencv_frame_{img_counter}.png"
+                    cv.imwrite(img_name, frame)
+                    print(ts, f"{img_name} written!")
 
-                img_counter += 1
+                    url = 'https://api-us.faceplusplus.com/humanbodypp/v1/gesture'
+                    files = {
+                        'api_key': (None, util.get_property("gest_api_key")),
+                        'api_secret': (None, util.get_property("gest_api_secret")),
+                        'image_file': (img_name, open(img_name, 'rb')),
+                        'return_gesture': (None, '1'),
+                    }
+                    x = requests.post(url, files=files)
+                    hands = json.loads(x.text)['hands']
+                    print("hands:", hands)
+                    for h in hands:
+                        gesture = Counter(h["gesture"]).most_common(1)[0][0]
+                        print(gesture)
+                        if gesture == "hand_open":
+                            t = self.youtube.entry.get_text()
+                            if t == ' ' or t == '':
+                                self.youtube.entry.set_text("")
+                                GLib.idle_add(self.youtube.play, None)
+                        elif gesture == "index_finger_up":
+                            GLib.idle_add(self.youtube.next, None)
+                        elif gesture == "victory":
+                            GLib.idle_add(self.youtube.previous, None)
+                        elif gesture == "thumb_up":
+                            GLib.idle_add(self.youtube.volume_up, None)
+                        elif gesture == "thumb_down":
+                            GLib.idle_add(self.youtube.volume_down, None)
+                        elif gesture == "fist":
+                            GLib.idle_add(self.youtube.toggle_mute, None)
+
+                    img_counter += 1
+                    ts = time.time()
 
     def quit(self, widget=None, *data):
         self.running = False
