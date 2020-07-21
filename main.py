@@ -98,22 +98,29 @@ class MainWindow(Gtk.Window):
                     print("hands:", hands)
                     for h in hands:
                         gesture = Counter(h["gesture"]).most_common(1)[0][0]
-                        print(gesture)
-                        if gesture == "hand_open":
+                        if gesture == "hand_open":  # todo: modify label
+                            print(gesture, "-> pause")
                             t = self.youtube.entry.get_text()
                             if t == ' ' or t == '':
                                 self.youtube.entry.set_text("")
                                 GLib.idle_add(self.youtube.play, None)
                         elif gesture == "index_finger_up":
+                            print(gesture, "-> next song")
                             GLib.idle_add(self.youtube.next, None)
                         elif gesture == "victory":
+                            print(gesture, "-> previous song")
                             GLib.idle_add(self.youtube.previous, None)
                         elif gesture == "thumb_up":
+                            print(gesture, "-> volume up")
                             GLib.idle_add(self.youtube.volume_up, None)
                         elif gesture == "thumb_down":
+                            print(gesture, "-> volume down")
                             GLib.idle_add(self.youtube.volume_down, None)
                         elif gesture == "fist":
+                            print(gesture, "-> mute")
                             GLib.idle_add(self.youtube.toggle_mute, None)
+                        else:
+                            print(gesture, "-> nothing")
 
                     img_counter += 1
                     ts = time.time()

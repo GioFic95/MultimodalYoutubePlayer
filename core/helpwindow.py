@@ -22,9 +22,10 @@ class helpWindow(Gtk.Window):
 
         smallBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         settingBox.pack_start(smallBox, True, True, 0)
-        self.audioOnlyButton = Gtk.CheckButton("Default show video")
+        self.audioOnlyButton = Gtk.CheckButton("Default audio only")
         self.audioOnlyButton.connect('toggled', self.audioOnly)
         self.audioOnlyButton.set_focus_on_click(False)
+        self.audioOnlyButton.set_active(self.data['AUDIO_ONLY'])
         smallBox.pack_start(self.audioOnlyButton, True, True, 0)
 
         okButtonBox = Gtk.Box(
@@ -127,11 +128,11 @@ class helpWindow(Gtk.Window):
 
     def dl_videoQualityChanged(self, widget):
         text = widget.get_active_text()
-        self.data['VID_QUALITY'] = text
+        self.data['DL_VID_QUALITY'] = text
 
     def dl_audQualityChanged(self, widget):
         text = widget.get_active_text()
-        self.data['AUD_QUALITY'] = text
+        self.data['DL_AUD_QUALITY'] = text
 
     def save(self, w):
         util.writeToConfig(self.data)

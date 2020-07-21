@@ -30,7 +30,7 @@ SPACE = 32
 F11 = 65480
 F12 = 65481
 
-window = None
+settings_window = None
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Notify', '0.7')
@@ -105,6 +105,7 @@ class YouTubePlayer(Gtk.Box):
         self.audioOnlyButton = Gtk.CheckButton("With Video                   ")
         self.audioOnlyButton.connect('toggled', self.audioOnly)
         self.audioOnlyButton.set_focus_on_click(False)
+        self.audioOnlyButton.set_active(not self.CONFIG['AUDIO_ONLY'])
         self.checkButtonBox.pack_start(self.audioOnlyButton, True, True, 0)
 
         # Download and info Box
@@ -329,8 +330,9 @@ class YouTubePlayer(Gtk.Box):
         self.seekBar.hide()
         self.currentTime.hide()
         self.totalTime.hide()
-        self.videoEventbox.hide()
         self.searchBox.hide()
+        if self.CONFIG["AUDIO_ONLY"]:
+            self.videoEventbox.hide()
 
     def showAllClicked(self, widget):
         if self.ALL_SHOWN:
@@ -648,10 +650,10 @@ class YouTubePlayer(Gtk.Box):
             self._playPlaylist()
 
     def volume_up(self, widget):
-        self.player.audio_set_volume(min(self.player.audio_get_volume()+10, 100))
+        self.player.audio_set_volume(min(self.player.audio_get_volume()+20, 100))
 
     def volume_down(self, widget):
-        self.player.audio_set_volume(max(self.player.audio_get_volume()-10, 0))
+        self.player.audio_set_volume(max(self.player.audio_get_volume()-20, 0))
 
     def toggle_mute(self, widget):
         if self.player.audio_get_mute():
@@ -775,13 +777,13 @@ class YouTubePlayer(Gtk.Box):
         return
 
     def _showHelp(self, widget):
-        global window
-        window = helpwindow.helpWindow()
-        window.set_modal(self)
-        window.set_transient_for(self)
-        window.set_destroy_with_parent(True)
-        window.connect("delete-event", window.buttonClicked)
-        window.show_function()
+        global settings_window
+        settings_window = helpwindow.helpWindow()
+        settings_window.set_modal(self.window)
+        settings_window.set_transient_for(self.window)
+        settings_window.set_destroy_with_parent(True)
+        settings_window.connect("delete-event", settings_window.buttonClicked)
+        settings_window.show_function()
         return
 
     def shuffle(self, widget):
