@@ -104,26 +104,41 @@ class MainWindow(Gtk.Window):
                             if t == ' ' or t == '':
                                 self.youtube.entry.set_text("")
                                 GLib.idle_add(self.youtube.play, None)
+                                self.show_info("Play/Pause")
                         elif gesture == "index_finger_up":
                             print(gesture, "-> next song")
                             GLib.idle_add(self.youtube.next, None)
+                            self.show_info("Next")
                         elif gesture == "victory":
                             print(gesture, "-> previous song")
                             GLib.idle_add(self.youtube.previous, None)
+                            self.show_info("Previous")
                         elif gesture == "thumb_up":
                             print(gesture, "-> volume up")
                             GLib.idle_add(self.youtube.volume_up, None)
+                            self.show_info("Volume up")
                         elif gesture == "thumb_down":
                             print(gesture, "-> volume down")
                             GLib.idle_add(self.youtube.volume_down, None)
+                            self.show_info("Volume down")
                         elif gesture == "fist":
                             print(gesture, "-> mute")
                             GLib.idle_add(self.youtube.toggle_mute, None)
+                            self.show_info("Mute")
                         else:
                             print(gesture, "-> nothing")
 
                     img_counter += 1
                     ts = time.time()
+
+    def show_info(self, text):
+        def _show_info():
+            t = self.infoLabel.get_text()
+            GLib.idle_add(self.infoLabel.set_markup, f"<b>{text}</b>")
+            time.sleep(3)
+            GLib.idle_add(self.infoLabel.set_text, t)
+
+        threading.Thread(target=_show_info).start()
 
     def quit(self, widget=None, *data):
         self.running = False

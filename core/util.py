@@ -17,7 +17,7 @@ def get_property(property):
 
 
 API_KEY = get_property("yt_api_key")
-DB_NAME = get_property("db_name")
+DB_NAME = get_property("psql_db")
 
 
 def _getYTResultURL(query):
@@ -118,8 +118,12 @@ class SearchBox(Gtk.Frame):
 def execute_query(query, db=DB_NAME):
     psql_user = get_property("psql_user")
     psql_psw = get_property("psql_password")
-    db_name = "" if db == "" else f" dbname={db}"
-    con = psycopg2.connect(f"user={psql_user} password='{psql_psw}'{db_name}")
+    host = get_property("psql_host")
+    port = get_property("psql_port")
+    host_name = "" if host == "" else f" host='{host}'"
+    port_name = "" if port == "" else f" host='{port}'"
+    db_name = "" if db == "" else f" dbname='{db}'"
+    con = psycopg2.connect(f"user={psql_user} password='{psql_psw}'{db_name}{host_name}{port_name}")
     con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cursor = con.cursor()
     cursor.execute(query)

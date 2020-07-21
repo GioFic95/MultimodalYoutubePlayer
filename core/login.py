@@ -71,7 +71,7 @@ class LoginBox(Gtk.Box):
             self.window.youtube.show_button(self.window)
             self.hide()
         else:
-            self.infoLabel.set_text("Wrong credentials.")
+            self.infoLabel.set_markup("<span foreground='red'><b>Wrong credentials.</b></span>")
 
     def register(self, button):
         user = self.new_username_entry.get_text()
