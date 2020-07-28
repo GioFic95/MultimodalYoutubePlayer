@@ -102,7 +102,7 @@ class MainWindow(Gtk.Window):
                     print("hands:", hands)
                     for h in hands:
                         gesture = Counter(h["gesture"]).most_common(1)[0][0]
-                        if gesture == "hand_open":  # todo: modify label
+                        if gesture == "hand_open":
                             print(gesture, "-> pause")
                             t = self.youtube.entry.get_text()
                             if t == ' ' or t == '':
