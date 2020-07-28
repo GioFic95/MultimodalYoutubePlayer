@@ -33,10 +33,7 @@ F12 = 65481
 settings_window = None
 
 gi.require_version('Gtk', '3.0')
-gi.require_version('Notify', '0.7')
-from gi.repository import Gtk, Gio, GLib, GObject, Notify
-
-Notify.init('Multimodal YouTube Player')
+from gi.repository import Gtk, Gio, GLib, GObject
 
 oldTime = 0
 instance = vlc.Instance('--no-xlib')

@@ -8,14 +8,13 @@ import requests
 import gi
 import vlc
 import cv2 as cv
+import azure.cognitiveservices.speech as speechsdk
 
 gi.require_version('Gtk', '3.0')
-gi.require_version('Notify', '0.7')
-from gi.repository import Gtk, Notify, GLib
+from gi.repository import Gtk, GLib
 
 from core import youtubeplayer, login, util
 
-Notify.init('Multimodal YouTube Player')
 instance = vlc.Instance('--no-xlib')
 
 DELAY = 1.5
@@ -54,9 +53,14 @@ class MainWindow(Gtk.Window):
         self.youtube.show(self)
 
         # Init webcam monitoring
-        self.running = True
-        self.thread = threading.Thread(target=self.web_capture)
-        self.thread.start()
+        self.running_web = True
+        self.thread_web = threading.Thread(target=self.web_capture)
+        self.thread_web.start()
+
+        # Init microphone monitoring
+        self.running_mic = True
+        self.thread_mic = threading.Thread(target=self.mic_capture)
+        self.thread_mic.start()
 
     def keyPressed(self, widget, event, data=None):
         if self.youtube.entry.is_visible():
@@ -69,7 +73,7 @@ class MainWindow(Gtk.Window):
         cam = cv.VideoCapture(0)
         img_counter = 0
         ts = time.time()
-        while self.running:
+        while self.running_web:
             # time.sleep(1.5)
             ret = cam.grab()
             if not ret:
@@ -131,6 +135,65 @@ class MainWindow(Gtk.Window):
                     img_counter += 1
                     ts = time.time()
 
+    def mic_capture(self):
+        print(" & start mic capture")
+        done = False
+        while self.running_mic:
+            speech_config = speechsdk.SpeechConfig(subscription=util.get_property("speech_key_1"),
+                                                   region=util.get_property("service_region"))
+            speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config)
+
+            def stop_cb(evt):
+                print('CLOSING on {}'.format(evt))
+                done = True
+
+            def handle_event(evt):
+                print('MIC RECOGNIZE: ', evt.result.text)
+                if evt.result.text == "play":
+                    print(evt.result.text, "-> play")
+                    GLib.idle_add(self.youtube.play, None)
+                    self.show_info("Play")
+                elif evt.result.text == "stop" or evt.result.text == "pause":
+                    print(evt.result.text, "-> stop/pause")
+                    GLib.idle_add(self.youtube.play, None)
+                    self.show_info("Stop")
+                elif evt.result.text == "next" or evt.result.text == "skip":
+                    print(evt.result.text, "-> next song")
+                    GLib.idle_add(self.youtube.next, None)
+                    self.show_info("Next")
+                elif evt.result.text == "previous":
+                    print(evt.result.text, "-> previous song")
+                    GLib.idle_add(self.youtube.previous, None)
+                    self.show_info("Previous")
+                elif evt.result.text == "up":
+                    print(evt.result.text, "-> volume up")
+                    GLib.idle_add(self.youtube.volume_up, None)
+                    self.show_info("Volume up")
+                elif evt.result.text == "down":
+                    print(evt.result.text, "-> volume down")
+                    GLib.idle_add(self.youtube.volume_down, None)
+                    self.show_info("Volume down")
+                elif evt.result.text == "mute":
+                    print(evt.result.text, "-> mute")
+                    GLib.idle_add(self.youtube.toggle_mute, None)
+                    self.show_info("Mute")
+                else:
+                    print(evt.result.text, "-> nothing")
+
+            speech_recognizer.recognizing.connect(handle_event)
+            speech_recognizer.session_started.connect(lambda evt: print('SESSION STARTED: {}'.format(evt)))
+            speech_recognizer.session_stopped.connect(lambda evt: print('SESSION STOPPED {}'.format(evt)))
+            speech_recognizer.canceled.connect(lambda evt: print('CANCELED {}'.format(evt)))
+
+            # stop continuous recognition on either session stopped or canceled events
+            speech_recognizer.session_stopped.connect(stop_cb)
+            speech_recognizer.canceled.connect(stop_cb)
+
+            # Start continuous speech recognition
+            speech_recognizer.start_continuous_recognition()
+            while not done:
+                time.sleep(.5)
+
     def show_info(self, text):
         def _show_info():
             t = self.infoLabel.get_text()
@@ -141,8 +204,10 @@ class MainWindow(Gtk.Window):
         threading.Thread(target=_show_info).start()
 
     def quit(self, widget=None, *data):
-        self.running = False
-        self.thread.join()
+        self.running_mic = False
+        self.running_web = False
+        self.thread_mic.join()
+        self.thread_web.join()
         Gtk.main_quit()
 
 
