@@ -181,6 +181,7 @@ class MainWindow(Gtk.Window):
                     print(evt.result.text, "-> nothing")
 
             speech_recognizer.recognizing.connect(handle_event)
+
             speech_recognizer.session_started.connect(lambda evt: print('SESSION STARTED: {}'.format(evt)))
             speech_recognizer.session_stopped.connect(lambda evt: print('SESSION STOPPED {}'.format(evt)))
             speech_recognizer.canceled.connect(lambda evt: print('CANCELED {}'.format(evt)))
