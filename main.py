@@ -74,7 +74,6 @@ class MainWindow(Gtk.Window):
         img_counter = 0
         ts = time.time()
         while self.running_web:
-            # time.sleep(1.5)
             ret = cam.grab()
             if not ret:
                 print("failed to grab frame")
@@ -137,63 +136,62 @@ class MainWindow(Gtk.Window):
 
     def mic_capture(self):
         print(" & start mic capture")
-        done = False
+
+        def stop_cb(evt):
+            print('CLOSING on {}'.format(evt))
+            self.running_mic = False
+
+        def handle_event(evt):
+            print('MIC RECOGNIZE: ', evt.result.text)
+            if evt.result.text == "play":
+                print(evt.result.text, "-> play")
+                GLib.idle_add(self.youtube.play, None)
+                self.show_info("Play")
+            elif evt.result.text == "stop" or evt.result.text == "pause":
+                print(evt.result.text, "-> stop/pause")
+                GLib.idle_add(self.youtube.play, None)
+                self.show_info("Stop")
+            elif evt.result.text == "next" or evt.result.text == "skip":
+                print(evt.result.text, "-> next song")
+                GLib.idle_add(self.youtube.next, None)
+                self.show_info("Next")
+            elif evt.result.text == "previous":
+                print(evt.result.text, "-> previous song")
+                GLib.idle_add(self.youtube.previous, None)
+                self.show_info("Previous")
+            elif evt.result.text == "up":
+                print(evt.result.text, "-> volume up")
+                GLib.idle_add(self.youtube.volume_up, None)
+                self.show_info("Volume up")
+            elif evt.result.text == "down":
+                print(evt.result.text, "-> volume down")
+                GLib.idle_add(self.youtube.volume_down, None)
+                self.show_info("Volume down")
+            elif evt.result.text == "mute":
+                print(evt.result.text, "-> mute")
+                GLib.idle_add(self.youtube.toggle_mute, None)
+                self.show_info("Mute")
+            else:
+                print(evt.result.text, "-> nothing")
+
+        speech_config = speechsdk.SpeechConfig(subscription=util.get_property("speech_key_1"),
+                                               region=util.get_property("service_region"))
+        speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config)
+        speech_recognizer.recognizing.connect(handle_event)
+
+        speech_recognizer.session_started.connect(lambda evt: print('SESSION STARTED: {}'.format(evt)))
+        speech_recognizer.session_stopped.connect(lambda evt: print('SESSION STOPPED {}'.format(evt)))
+        speech_recognizer.canceled.connect(lambda evt: print('CANCELED {}'.format(evt)))
+
+        # stop continuous recognition on either session stopped or canceled events
+        speech_recognizer.session_stopped.connect(stop_cb)
+        speech_recognizer.canceled.connect(stop_cb)
+
+        # Start continuous speech recognition
+        speech_recognizer.start_continuous_recognition()
         while self.running_mic:
-            speech_config = speechsdk.SpeechConfig(subscription=util.get_property("speech_key_1"),
-                                                   region=util.get_property("service_region"))
-            speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config)
-
-            def stop_cb(evt):
-                print('CLOSING on {}'.format(evt))
-                done = True
-
-            def handle_event(evt):
-                print('MIC RECOGNIZE: ', evt.result.text)
-                if evt.result.text == "play":
-                    print(evt.result.text, "-> play")
-                    GLib.idle_add(self.youtube.play, None)
-                    self.show_info("Play")
-                elif evt.result.text == "stop" or evt.result.text == "pause":
-                    print(evt.result.text, "-> stop/pause")
-                    GLib.idle_add(self.youtube.play, None)
-                    self.show_info("Stop")
-                elif evt.result.text == "next" or evt.result.text == "skip":
-                    print(evt.result.text, "-> next song")
-                    GLib.idle_add(self.youtube.next, None)
-                    self.show_info("Next")
-                elif evt.result.text == "previous":
-                    print(evt.result.text, "-> previous song")
-                    GLib.idle_add(self.youtube.previous, None)
-                    self.show_info("Previous")
-                elif evt.result.text == "up":
-                    print(evt.result.text, "-> volume up")
-                    GLib.idle_add(self.youtube.volume_up, None)
-                    self.show_info("Volume up")
-                elif evt.result.text == "down":
-                    print(evt.result.text, "-> volume down")
-                    GLib.idle_add(self.youtube.volume_down, None)
-                    self.show_info("Volume down")
-                elif evt.result.text == "mute":
-                    print(evt.result.text, "-> mute")
-                    GLib.idle_add(self.youtube.toggle_mute, None)
-                    self.show_info("Mute")
-                else:
-                    print(evt.result.text, "-> nothing")
-
-            speech_recognizer.recognizing.connect(handle_event)
-
-            speech_recognizer.session_started.connect(lambda evt: print('SESSION STARTED: {}'.format(evt)))
-            speech_recognizer.session_stopped.connect(lambda evt: print('SESSION STOPPED {}'.format(evt)))
-            speech_recognizer.canceled.connect(lambda evt: print('CANCELED {}'.format(evt)))
-
-            # stop continuous recognition on either session stopped or canceled events
-            speech_recognizer.session_stopped.connect(stop_cb)
-            speech_recognizer.canceled.connect(stop_cb)
-
-            # Start continuous speech recognition
-            speech_recognizer.start_continuous_recognition()
-            while not done:
-                time.sleep(.5)
+            print("mic sleep")
+            time.sleep(.5)
 
     def show_info(self, text):
         def _show_info():
