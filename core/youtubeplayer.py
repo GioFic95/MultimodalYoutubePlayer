@@ -238,9 +238,9 @@ class YouTubePlayer(Gtk.Box):
         MPRIS.dbus = pkg_resources.resource_string(
             __name__, "mpris/mpris.xml").decode("utf-8")
         self.mpris.player = self
-        bus = SessionBus()
-        bus.publish('org.mpris.MediaPlayer2.YouTubePlayer', self.mpris,
-                    ("/org/mpris/MediaPlayer2", self.mpris))
+        # bus = SessionBus()
+        # bus.publish('org.mpris.MediaPlayer2.YouTubePlayer', self.mpris,
+        #             ("/org/mpris/MediaPlayer2", self.mpris))
 
     def onDraw(self, w, cr):
         cr.set_source_rgb(0, 0, 0)

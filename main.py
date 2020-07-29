@@ -18,7 +18,7 @@ from core import youtubeplayer, login, util, face
 
 instance = vlc.Instance('--no-xlib')
 
-DELAY = 1.5
+DELAY = 1.1
 
 
 class MainWindow(Gtk.Window):
@@ -40,7 +40,7 @@ class MainWindow(Gtk.Window):
         mainBox.set_size_request(400, 100)
 
         # Title
-        self.infoLabel = Gtk.Label(label="Multimodal YouTubePlayer")
+        self.infoLabel = Gtk.Label(label="A YouTubePlayer for Everyone")
         self.infoLabel.set_line_wrap(True)
         mainBox.pack_start(self.infoLabel, True, True, 0)
 
@@ -52,6 +52,9 @@ class MainWindow(Gtk.Window):
         # YouTube
         self.youtube = youtubeplayer.YouTubePlayer(self, mainBox, headerBar, self.infoLabel)
         self.youtube.show(self)
+
+        # Check if registration button clicked
+        self.can_register = True
 
         # Init webcam monitoring
         self.running_web = True
@@ -70,12 +73,13 @@ class MainWindow(Gtk.Window):
             self.login.keyPressed(widget, event, data)
 
     def web_capture(self):
+        time.sleep(3)
         print("start web capture")
         cam = cv.VideoCapture(0)
         img_counter = 0
         ts = time.time()
         while self.running_web:
-            ret = cam.read()
+            ret = cam.grab()
             if not ret:
                 print("failed to grab frame")
                 continue
@@ -132,7 +136,7 @@ class MainWindow(Gtk.Window):
                         else:
                             print(gesture, "-> nothing")
 
-                else:
+                elif self.can_register:
                     face_token, smile, emotion = face.detect(img_name)
                     print("emotion:", emotion)
                     match = face.search(face_token)
@@ -160,7 +164,6 @@ class MainWindow(Gtk.Window):
             self.running_mic = False
 
         def handle_event(evt):
-            print('MIC RECOGNIZE: ', evt.result.text)
             if evt.result.text == "play":
                 print(evt.result.text, "-> play")
                 GLib.idle_add(self.youtube.play, None)
@@ -168,7 +171,7 @@ class MainWindow(Gtk.Window):
             elif evt.result.text == "stop" or evt.result.text == "pause":
                 print(evt.result.text, "-> stop/pause")
                 GLib.idle_add(self.youtube.play, None)
-                self.show_info("Stop")
+                self.show_info("Pause")
             elif evt.result.text == "next" or evt.result.text == "skip":
                 print(evt.result.text, "-> next song")
                 GLib.idle_add(self.youtube.next, None)
@@ -177,18 +180,18 @@ class MainWindow(Gtk.Window):
                 print(evt.result.text, "-> previous song")
                 GLib.idle_add(self.youtube.previous, None)
                 self.show_info("Previous")
-            elif evt.result.text == "up":
+            elif "up" in evt.result.text:
                 print(evt.result.text, "-> volume up")
                 GLib.idle_add(self.youtube.volume_up, None)
                 self.show_info("Volume up")
-            elif evt.result.text == "down":
+            elif "down" in evt.result.text:
                 print(evt.result.text, "-> volume down")
                 GLib.idle_add(self.youtube.volume_down, None)
                 self.show_info("Volume down")
-            elif evt.result.text == "mute":
+            elif "mute" in evt.result.text:
                 print(evt.result.text, "-> mute")
                 GLib.idle_add(self.youtube.toggle_mute, None)
-                self.show_info("Mute")
+                self.show_info("Mute/Unmute")
             else:
                 print(evt.result.text, "-> nothing")
 
@@ -208,7 +211,7 @@ class MainWindow(Gtk.Window):
         # Start continuous speech recognition
         speech_recognizer.start_continuous_recognition()
         while self.running_mic:
-            print("mic sleep")
+            # print("mic sleep")
             time.sleep(.5)
 
     def show_info(self, text):

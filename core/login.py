@@ -1,7 +1,11 @@
-import hashlib
 import gi
+import time
+import hashlib
+import cv2 as cv
+from core import face
+
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 from psycopg2.errors import UniqueViolation
 from core import util
 
@@ -33,31 +37,8 @@ class LoginBox(Gtk.Box):
         self.login_button.connect('clicked', self.login)
         mainBox.pack_start(self.login_button, True, True, 0)
 
-        # Separator
-        self.space = Gtk.Label("\n")
-        mainBox.pack_start(self.space, True, True, 0)
-        self.separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-        mainBox.pack_start(self.separator, True, True, 0)
-        
-        # Registration
-        self.new_username_label = Gtk.Label("\nNew Username")
-        mainBox.pack_start(self.new_username_label, True, True, 0)
-        self.new_username_entry = Gtk.Entry()
-        self.new_username_entry.set_placeholder_text("Insert your desired username")
-        mainBox.pack_start(self.new_username_entry, True, True, 0)
-
-        self.new_password_label = Gtk.Label("New Password")
-        mainBox.pack_start(self.new_password_label, True, True, 0)
-        self.new_password_entry = Gtk.Entry()
-        self.new_password_entry.set_visibility(False)
-        self.new_password_entry.set_placeholder_text("Insert your desired password")
-        mainBox.pack_start(self.new_password_entry, True, True, 0)
-
-        self.deaf = Gtk.CheckButton("Deaf user   ")
-        mainBox.pack_start(self.deaf, True, True, 0)
-
         self.register_button = Gtk.Button.new_with_label("Register")
-        self.register_button.connect('clicked', self.register)
+        self.register_button.connect('clicked', self.register_dialog)
         mainBox.pack_start(self.register_button, True, True, 0)
 
     def login(self, button):
@@ -73,38 +54,29 @@ class LoginBox(Gtk.Box):
         else:
             self.infoLabel.set_markup("<span foreground='red'><b>Wrong credentials.</b></span>")
 
-    def register(self, button):
-        user = self.new_username_entry.get_text()
-        psw = hashlib.sha256(self.new_password_entry.get_text().encode()).hexdigest()
+    def register_dialog(self, button):
+        self.window.can_register = False
+        dialog = RegistrationDialog(self)
+        response = dialog.run()
 
-        query = f"INSERT INTO users(username, psw, deaf) VALUES ('{user}', '{psw}', {self.deaf.get_active()});"
-        try:
-            util.execute_query(query)
-            self.infoLabel.set_text(f"Welcome {user}.")
-            self.window.youtube.show_button(self.window)
-            self.hide()
-        except UniqueViolation:
-            self.new_username_entry.set_text("")
-            self.new_password_entry.set_text("")
-            self.infoLabel.set_text("The selected Username already exists.")
+        if response == Gtk.ResponseType.OK:
+            print("The REGISTER button was clicked")
+            dialog.register(button)
+        elif response == Gtk.ResponseType.CANCEL:
+            print("The Cancel button was clicked")
+
+        dialog.destroy()
 
     def show(self, window):
         window.show_all()
         self.username_entry.grab_focus()
-    
+
     def hide(self):
         self.username_label.hide()
         self.username_entry.hide()
         self.password_label.hide()
         self.password_entry.hide()
         self.login_button.hide()
-        self.space.hide()
-        self.separator.hide()
-        self.new_username_label.hide()
-        self.new_username_entry.hide()
-        self.new_password_label.hide()
-        self.new_password_entry.hide()
-        self.deaf.hide()
         self.register_button.hide()
 
     def keyPressed(self, widget, event, data=None):
@@ -112,3 +84,85 @@ class LoginBox(Gtk.Box):
 
         if key == ENTER:
             self.login(self.login_button)
+
+
+class RegistrationDialog(Gtk.Dialog):
+    def __init__(self, parent):
+        Gtk.Dialog.__init__(self, title="Registration", transient_for=parent.window, flags=0)
+        self.add_buttons(
+            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OK, Gtk.ResponseType.OK
+        )
+
+        self.set_default_size(520, 100)
+        self.parent = parent
+
+        box = self.get_content_area()
+
+        self.label = Gtk.Label(label="Insert your data and then wait until 3 pictures are taken!")
+        box.add(self.label)
+
+        # Registration
+        self.new_username_label = Gtk.Label("\nNew Username")
+        box.add(self.new_username_label)
+        self.new_username_entry = Gtk.Entry()
+        self.new_username_entry.set_placeholder_text("Insert your desired username")
+        box.add(self.new_username_entry)
+
+        self.new_password_label = Gtk.Label("New Password")
+        box.add(self.new_password_label)
+        self.new_password_entry = Gtk.Entry()
+        self.new_password_entry.set_visibility(False)
+        self.new_password_entry.set_placeholder_text("Insert your desired password")
+        box.add(self.new_password_entry)
+
+        self.deaf = Gtk.CheckButton("Deaf user   ")
+        box.add(self.deaf)
+
+        self.show_all()
+
+    def register(self, button):
+        user = self.new_username_entry.get_text()
+        psw = hashlib.sha256(self.new_password_entry.get_text().encode()).hexdigest()
+        face_tokens = []
+
+        DELAY = 1.1
+        img_count = 0
+        ts = time.time()
+        cam = cv.VideoCapture(0)
+        while True:
+            ret = cam.grab()
+            if not ret:
+                print("failed to grab frame")
+                continue
+            if time.time() - ts >= DELAY:
+                ret, frame = cam.retrieve()
+                if not ret:
+                    print("failed to retrieve frame")
+                    continue
+
+                img_name = f"images/test-img/registration_frame_{img_count}.png"
+                cv.imwrite(img_name, frame)
+                face_token, _, emotion = face.detect(img_name)
+                print("emotion:", emotion)
+                face_tokens.append(face_token)
+                GLib.idle_add(self.label.set_text, f"Thank you, picture number {img_count + 1} taken!")
+                img_count += 1
+
+                if img_count == 3:
+                    break
+
+        face.faceset(face_tokens)
+        face_tokens = [hashlib.sha256(token.encode()).hexdigest() for token in face_tokens]
+        face_tokens = ",".join(face_tokens)
+
+        query = f"INSERT INTO users(username, psw, deaf, faces) VALUES ('{user}', '{psw}', {self.deaf.get_active()}, '{face_tokens}'); "
+        try:
+            util.execute_query(query)
+            self.parent.infoLabel.set_text(f"Welcome {user}.")
+            self.parent.window.youtube.show_button(self.parent.window)
+            self.parent.hide()
+        except UniqueViolation:
+            self.new_username_entry.set_text("")
+            self.new_password_entry.set_text("")
+            self.label.set_text("The selected Username already exists.")
+

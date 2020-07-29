@@ -22,7 +22,7 @@ def detect(img_name):
     }
     x = requests.post(url, files=files)
     res = json.loads(x.text)
-    print(len(res['faces']))
+    # print(len(res['faces']))
     face_token = res['faces'][0]['face_token']
     smile = res['faces'][0]['attributes']['smile']
     emotions = res['faces'][0]['attributes']['emotion']
@@ -41,7 +41,7 @@ def faceset(face_tokens, set_name=faceset_name):
         'face_tokens': (None, ",".join(face_tokens))
     }
     x = requests.post(url, files=files)
-    print(x)
+    print('faceset ', x)
 
 
 def search(face_token, set_name=faceset_name):
@@ -55,7 +55,7 @@ def search(face_token, set_name=faceset_name):
     }
     x = requests.post(url, files=files)
     res = json.loads(x.text)
-    print(len(res['results']))
+    # print(len(res['results']))
     match_face_token = res['results'][0]['face_token']
     return match_face_token
 
