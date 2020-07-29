@@ -494,12 +494,22 @@ class YouTubePlayer(Gtk.Box):
             print("\nhandle", handle)
             self.player.set_hwnd(handle)
         elif sys.platform == 'darwin':
-            gdkdll = ctypes.CDLL('libgdk-3.0.dll')
+            ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
+            ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object]
+            gpointer = ctypes.pythonapi.PyCapsule_GetPointer(widget.get_property('window').__gpointer__, None)
+            libgdk = ctypes.CDLL("libgdk-3.0.dylib")
+            libgdk.gdk_quartz_window_get_nsview.restype = ctypes.c_void_p
+            libgdk.gdk_quartz_window_get_nsview.argtypes = [ctypes.c_void_p]
+            handle = libgdk.gdk_quartz_window_get_nsview(gpointer)
+            self.player.set_nsobject(handle)
+            """
+            gdkdll = ctypes.CDLL('libgdk-3.0.dylib')
             get_nsview = gdkdll.gdk_quaerz_window_get_nsview
             get_nsview.restype, get_nsview.argtypes = [ctypes.c_void_p], ctypes.c_void_p
             nsobject = get_nsview(util.get_window_pointer(widget.get_window()))
             print("\nnsobject", nsobject)
             self.player.set_nsobject(nsobject)
+            """
         else:
             xid = widget.get_window().get_xid()
             self.player.set_xwindow(xid)

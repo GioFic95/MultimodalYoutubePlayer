@@ -52,7 +52,7 @@ class LoginBox(Gtk.Box):
         if len(users) == 1:
             img = util.get_last_pic("opencv_frame")
             face_token, _, emotion = face.detect(img)
-            go_to_playlist(self, user, emotion, "sad")
+            go_to_playlist(self, user, deaf, emotion)
         else:
             self.infoLabel.set_markup("<span foreground='red'><b>Wrong credentials.</b></span>")
 
@@ -172,14 +172,14 @@ class RegistrationDialog(Gtk.Dialog):
 def go_to_playlist(parent, user, deaf, emotion):
     playlists = {
         True: {
-            "sad": "https://www.youtube.com/playlist?list=PLMzUXFpWgSFGvY75HUQ_nWaA1uT5QZPxh",
-            "happy": "https://www.youtube.com/playlist?list=PLMzUXFpWgSFEgSpsBQ-T6WtbsUtmmf10E",
+            "sadness": "https://www.youtube.com/playlist?list=PLMzUXFpWgSFGvY75HUQ_nWaA1uT5QZPxh",
+            "happiness": "https://www.youtube.com/playlist?list=PLMzUXFpWgSFEgSpsBQ-T6WtbsUtmmf10E",
             "neutral": "https://www.youtube.com/playlist?list=PLMzUXFpWgSFEqY1Ff0NJFZ5BGLwMmi9hm"
         },
         False: {
-            "sad": "url_sad",
-            "happy": "url_happy",
-            "neutral": "url_neutral"
+            "sadness": "https://www.youtube.com/watch?v=bCHqIhiFmEY&list=PLgzTt0k8mXzHcKebL8d0uYHfawiARhQja",
+            "happiness": "https://www.youtube.com/watch?v=o6b9JpBFjd4&list=PLhHzl3We71fcyZAgLj5BVxj2tToDB8FGN",
+            "neutral": "https://www.youtube.com/watch?v=K-a8s8OLBSE&list=PLOHoVaTp8R7d3L_pjuwIa6nRh4tH5nI4x"
         }
     }
 
@@ -187,4 +187,4 @@ def go_to_playlist(parent, user, deaf, emotion):
     parent.window.youtube.entry.set_text(playlists[deaf][emotion])
     parent.window.youtube.show_button(parent.window)
     parent.hide()
-    parent.window.youtube.play()
+    parent.window.youtube.play(None)

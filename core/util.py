@@ -157,7 +157,3 @@ def get_last_pic(pattern):
             last_img = img
             last_ts = ts
     return last_img
-
-
-if __name__ == '__main__':
-    print(get_last_pic())
