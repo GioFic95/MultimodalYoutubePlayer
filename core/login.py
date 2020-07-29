@@ -44,13 +44,13 @@ class LoginBox(Gtk.Box):
     def login(self, button):
         user = self.username_entry.get_text()
         psw = hashlib.sha256(self.password_entry.get_text().encode()).hexdigest()
-        query = f"SELECT * FROM users WHERE username='{user}' AND psw='{psw}';"
+        query = f"SELECT username, deaf FROM users WHERE username='{user}' AND psw='{psw}';"
         users = util.execute_query(query).fetchall()
+        emotion = users[0][1]
+        print("login emotion:", emotion)
 
         if len(users) == 1:
-            self.infoLabel.set_text(f"Hello {user}.")
-            self.window.youtube.show_button(self.window)
-            self.hide()
+            go_to_playlist(self, user, emotion, "sad")
         else:
             self.infoLabel.set_markup("<span foreground='red'><b>Wrong credentials.</b></span>")
 
@@ -158,11 +158,29 @@ class RegistrationDialog(Gtk.Dialog):
         query = f"INSERT INTO users(username, psw, deaf, faces) VALUES ('{user}', '{psw}', {self.deaf.get_active()}, '{face_tokens}'); "
         try:
             util.execute_query(query)
-            self.parent.infoLabel.set_text(f"Welcome {user}.")
-            self.parent.window.youtube.show_button(self.parent.window)
-            self.parent.hide()
+            go_to_playlist(self.parent, user, self.deaf.get_active(), "sad")
         except UniqueViolation:
             self.new_username_entry.set_text("")
             self.new_password_entry.set_text("")
             self.label.set_text("The selected Username already exists.")
 
+
+def go_to_playlist(parent, user, deaf, emotion):
+    playlists = {
+        True: {
+            "sad": "https://www.youtube.com/playlist?list=PLMzUXFpWgSFGvY75HUQ_nWaA1uT5QZPxh",
+            "happy": "https://www.youtube.com/playlist?list=PLMzUXFpWgSFEgSpsBQ-T6WtbsUtmmf10E",
+            "neutral": "https://www.youtube.com/playlist?list=PLMzUXFpWgSFEqY1Ff0NJFZ5BGLwMmi9hm"
+        },
+        False: {
+            "sad": "url_sad",
+            "happy": "url_happy",
+            "neutral": "url_neutral"
+        }
+    }
+
+    parent.infoLabel.set_text(f"Welcome {user}.")
+    parent.window.youtube.entry.set_text(playlists[deaf][emotion])
+    parent.window.youtube.show_button(parent.window)
+    parent.hide()
+    parent.window.youtube.play()

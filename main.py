@@ -117,7 +117,7 @@ class MainWindow(Gtk.Window):
                             print(gesture, "-> next song")
                             GLib.idle_add(self.youtube.next, None)
                             self.show_info("Next")
-                        elif gesture == "victory":
+                        elif gesture == "victory" or gesture == "double_finger_up":
                             print(gesture, "-> previous song")
                             GLib.idle_add(self.youtube.previous, None)
                             self.show_info("Previous")
@@ -149,9 +149,7 @@ class MainWindow(Gtk.Window):
                     print("res:", user, deaf)
 
                     # Login
-                    self.infoLabel.set_text(f"Hello {user}.")
-                    self.youtube.show_button(self)
-                    self.login.hide()
+                    login.go_to_playlist(self.login, user, deaf, emotion)
 
                 img_counter += 1
                 ts = time.time()
