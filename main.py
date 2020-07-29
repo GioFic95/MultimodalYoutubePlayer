@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import hashlib
 import time
 import threading
 import json
@@ -13,7 +14,7 @@ import azure.cognitiveservices.speech as speechsdk
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib
 
-from core import youtubeplayer, login, util
+from core import youtubeplayer, login, util, face
 
 instance = vlc.Instance('--no-xlib')
 
@@ -74,21 +75,21 @@ class MainWindow(Gtk.Window):
         img_counter = 0
         ts = time.time()
         while self.running_web:
-            ret = cam.grab()
+            ret = cam.read()
             if not ret:
                 print("failed to grab frame")
                 continue
             if time.time() - ts >= DELAY:
+                ret, frame = cam.retrieve()
+                if not ret:
+                    print("failed to retrieve frame")
+                    continue
+
+                img_name = f"images/test-img/opencv_frame_{img_counter}.png"
+                cv.imwrite(img_name, frame)
+                print(ts, f"{img_name} written!")
+
                 if self.youtube.entry.is_visible():
-                    ret, frame = cam.retrieve()
-                    if not ret:
-                        print("failed to retrieve frame")
-                        continue
-
-                    img_name = f"images/test-img/opencv_frame_{img_counter}.png"
-                    cv.imwrite(img_name, frame)
-                    print(ts, f"{img_name} written!")
-
                     url = 'https://api-us.faceplusplus.com/humanbodypp/v1/gesture'
                     files = {
                         'api_key': (None, util.get_property("gest_api_key")),
@@ -131,8 +132,25 @@ class MainWindow(Gtk.Window):
                         else:
                             print(gesture, "-> nothing")
 
-                    img_counter += 1
-                    ts = time.time()
+                else:
+                    face_token, smile, emotion = face.detect(img_name)
+                    print("emotion:", emotion)
+                    match = face.search(face_token)
+                    print("match:", match)
+                    match = hashlib.sha256(match.encode()).hexdigest()
+                    cursor = util.execute_query(f"SELECT username, deaf FROM users WHERE faces LIKE '%{match}%';")
+                    res = cursor.fetchall()
+                    user = res[0][0]
+                    deaf = res[0][1]
+                    print("res:", user, deaf)
+
+                    # Login
+                    self.infoLabel.set_text(f"Hello {user}.")
+                    self.youtube.show_button(self)
+                    self.login.hide()
+
+                img_counter += 1
+                ts = time.time()
 
     def mic_capture(self):
         print(" & start mic capture")
