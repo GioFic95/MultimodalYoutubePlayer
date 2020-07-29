@@ -1,3 +1,4 @@
+import glob
 import os
 import urllib
 import json
@@ -10,7 +11,6 @@ from gi.repository import Gtk
 
 if "core" in os.getcwd():
     os.chdir("..")
-    print("cwd")
 CONFIG_FILE = "data.json"
 
 
@@ -145,3 +145,19 @@ def check_db():
     cur = execute_query("SELECT datname FROM pg_database;", db="")
     list_database = cur.fetchall()
     return (DB_NAME,) in list_database
+
+
+def get_last_pic(pattern):
+    imgs = glob.glob(f"images/test-img/{pattern}_*")
+    last_img = ""
+    last_ts = 0
+    for img in imgs:
+        ts = os.path.getmtime(img)
+        if ts > last_ts:
+            last_img = img
+            last_ts = ts
+    return last_img
+
+
+if __name__ == '__main__':
+    print(get_last_pic())

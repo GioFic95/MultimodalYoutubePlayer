@@ -46,10 +46,12 @@ class LoginBox(Gtk.Box):
         psw = hashlib.sha256(self.password_entry.get_text().encode()).hexdigest()
         query = f"SELECT username, deaf FROM users WHERE username='{user}' AND psw='{psw}';"
         users = util.execute_query(query).fetchall()
-        emotion = users[0][1]
-        print("login emotion:", emotion)
+        deaf = users[0][1]
+        print("login deaf:", deaf)
 
         if len(users) == 1:
+            img = util.get_last_pic("opencv_frame")
+            face_token, _, emotion = face.detect(img)
             go_to_playlist(self, user, emotion, "sad")
         else:
             self.infoLabel.set_markup("<span foreground='red'><b>Wrong credentials.</b></span>")
@@ -124,6 +126,7 @@ class RegistrationDialog(Gtk.Dialog):
         user = self.new_username_entry.get_text()
         psw = hashlib.sha256(self.new_password_entry.get_text().encode()).hexdigest()
         face_tokens = []
+        emotions = []
 
         DELAY = 1.1
         img_count = 0
@@ -145,6 +148,7 @@ class RegistrationDialog(Gtk.Dialog):
                 face_token, _, emotion = face.detect(img_name)
                 print("emotion:", emotion)
                 face_tokens.append(face_token)
+                emotions.append(emotion)
                 GLib.idle_add(self.label.set_text, f"Thank you, picture number {img_count + 1} taken!")
                 img_count += 1
 
@@ -158,7 +162,7 @@ class RegistrationDialog(Gtk.Dialog):
         query = f"INSERT INTO users(username, psw, deaf, faces) VALUES ('{user}', '{psw}', {self.deaf.get_active()}, '{face_tokens}'); "
         try:
             util.execute_query(query)
-            go_to_playlist(self.parent, user, self.deaf.get_active(), "sad")
+            go_to_playlist(self.parent, user, self.deaf.get_active(), emotions[0])
         except UniqueViolation:
             self.new_username_entry.set_text("")
             self.new_password_entry.set_text("")
