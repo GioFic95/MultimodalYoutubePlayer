@@ -21,8 +21,8 @@ def detect(img_name):
         'return_attributes': (None, 'smiling,emotion'),
     }
     x = requests.post(url, files=files)
+    print(x.text)
     res = json.loads(x.text)
-    # print(len(res['faces']))
     face_token = res['faces'][0]['face_token']
     smile = res['faces'][0]['attributes']['smile']
     emotions = res['faces'][0]['attributes']['emotion']

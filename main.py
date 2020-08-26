@@ -1,9 +1,12 @@
 #!/usr/bin/python3
 
 import hashlib
+import shlex
 import time
 import threading
+import multiprocessing
 import json
+import subprocess
 from collections import Counter
 import requests
 import gi
@@ -58,7 +61,8 @@ class MainWindow(Gtk.Window):
 
         # Init webcam monitoring
         self.running_web = True
-        self.thread_web = threading.Thread(target=self.web_capture)
+        self.thread_web = threading.Thread(target=self.cam_capture)
+        # self.thread_web = multiprocessing.Process(target=self.cam_capture)
         self.thread_web.start()
 
         # Init microphone monitoring
@@ -153,6 +157,87 @@ class MainWindow(Gtk.Window):
 
                 img_counter += 1
                 ts = time.time()
+
+    def cam_capture(self):
+        time.sleep(3)
+        print("start web capture")
+        img_counter = 0
+        while self.running_web:
+            img_name = f"images/test-img/gphoto_{img_counter}.jpg"
+            cmd = f"gphoto2 --capture-image-and-download --filename {img_name} --force-overwrite"
+            args = shlex.split(cmd)
+            s = subprocess.Popen(args, stderr=subprocess.PIPE)
+            s.wait()
+            err = s.stderr.read()
+
+            if len(err) != 0:
+                print("failed to take picture")
+                continue
+            else:
+                img_counter += 1
+                print(f"{img_name} written!", "\n", s.stdout)
+
+                if self.youtube.entry.is_visible():
+                    url = 'https://api-us.faceplusplus.com/humanbodypp/v1/gesture'
+                    files = {
+                        'api_key': (None, util.get_property("gest_api_key")),
+                        'api_secret': (None, util.get_property("gest_api_secret")),
+                        'image_file': (img_name, open(img_name, 'rb')),
+                        'return_gesture': (None, '1'),
+                    }
+                    x = requests.post(url, files=files)
+                    hands = json.loads(x.text)['hands']
+                    print("hands:", hands)
+                    for h in hands:
+                        gesture = Counter(h["gesture"]).most_common(1)[0][0]
+                        if gesture == "hand_open":
+                            print(gesture, "-> pause")
+                            t = self.youtube.entry.get_text()
+                            if t == ' ' or t == '':
+                                self.youtube.entry.set_text("")
+                                GLib.idle_add(self.youtube.play, None)
+                                self.show_info("Play/Pause")
+                        elif gesture == "index_finger_up":
+                            print(gesture, "-> next song")
+                            GLib.idle_add(self.youtube.next, None)
+                            self.show_info("Next")
+                        elif gesture == "victory" or gesture == "double_finger_up":
+                            print(gesture, "-> previous song")
+                            GLib.idle_add(self.youtube.previous, None)
+                            self.show_info("Previous")
+                        elif gesture == "thumb_up":
+                            print(gesture, "-> volume up")
+                            GLib.idle_add(self.youtube.volume_up, None)
+                            self.show_info("Volume up")
+                        elif gesture == "thumb_down":
+                            print(gesture, "-> volume down")
+                            GLib.idle_add(self.youtube.volume_down, None)
+                            self.show_info("Volume down")
+                        elif gesture == "fist":
+                            print(gesture, "-> mute")
+                            GLib.idle_add(self.youtube.toggle_mute, None)
+                            self.show_info("Mute")
+                        else:
+                            print(gesture, "-> nothing")
+
+                elif self.can_register:
+                    try:
+                        face_token, smile, emotion = face.detect(img_name)
+                        print("emotion:", emotion)
+                    except:
+                        GLib.idle_add(self.infoLabel.set_text, "Face detection error.")
+                    match = face.search(face_token)
+                    print("match:", match)
+                    match = hashlib.sha256(match.encode()).hexdigest()
+                    cursor = util.execute_query(f"SELECT username, deaf FROM users WHERE faces LIKE '%{match}%';")
+                    res = cursor.fetchall()
+                    user = res[0][0]
+                    deaf = res[0][1]
+                    print("res:", user, deaf)
+
+                    # Login
+                    login.go_to_playlist(self.login, user, deaf, emotion)
+                time.sleep(DELAY)
 
     def mic_capture(self):
         print(" & start mic capture")

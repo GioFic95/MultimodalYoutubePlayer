@@ -184,7 +184,8 @@ def go_to_playlist(parent, user, deaf, emotion):
     }
 
     parent.infoLabel.set_text(f"Welcome {user}.")
-    parent.window.youtube.entry.set_text(playlists[deaf][emotion])
+    playlist = playlists[deaf][emotion] if emotion in playlists[deaf] else "neutral"
+    parent.window.youtube.entry.set_text(playlist)
     parent.window.youtube.show_button(parent.window)
     parent.hide()
     parent.window.youtube.play(None)
