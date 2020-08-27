@@ -177,9 +177,9 @@ def go_to_playlist(parent, user, deaf, emotion):
             "neutral": "https://www.youtube.com/playlist?list=PLMzUXFpWgSFEqY1Ff0NJFZ5BGLwMmi9hm"
         },
         False: {
-            "sadness": "https://www.youtube.com/watch?v=bCHqIhiFmEY&list=PLgzTt0k8mXzHcKebL8d0uYHfawiARhQja",
-            "happiness": "https://www.youtube.com/watch?v=o6b9JpBFjd4&list=PLhHzl3We71fcyZAgLj5BVxj2tToDB8FGN",
-            "neutral": "https://www.youtube.com/watch?v=K-a8s8OLBSE&list=PLOHoVaTp8R7d3L_pjuwIa6nRh4tH5nI4x"
+            "sadness": "https://www.youtube.com/playlist?list=PLih-wODrJ8UFotsjk4cUW1P06EzpEXNRY",
+            "happiness": "https://www.youtube.com/playlist?list=PLih-wODrJ8UHcl5rrlG6Tq3VCQHr8spwI",
+            "neutral": "https://www.youtube.com/playlist?list=PLih-wODrJ8UFhWWkMdGxzdAEJqCE25FDD"
         }
     }
 

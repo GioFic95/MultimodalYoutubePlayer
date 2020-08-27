@@ -4,7 +4,6 @@ import hashlib
 import shlex
 import time
 import threading
-import multiprocessing
 import json
 import subprocess
 from collections import Counter
@@ -12,6 +11,7 @@ import requests
 import gi
 import vlc
 import cv2 as cv
+import gphoto2 as gp
 import azure.cognitiveservices.speech as speechsdk
 
 gi.require_version('Gtk', '3.0')
@@ -61,8 +61,16 @@ class MainWindow(Gtk.Window):
 
         # Init webcam monitoring
         self.running_web = True
-        self.thread_web = threading.Thread(target=self.cam_capture)
-        # self.thread_web = multiprocessing.Process(target=self.cam_capture)
+        camera = gp.Camera()
+        try:
+            text = str(camera.get_summary())
+            if "Nessuna fotocamera" in text or "No Image Capture" in text:
+                self.thread_web = threading.Thread(target=self.web_capture)
+            else:
+                self.thread_web = threading.Thread(target=self.cam_capture)
+        except:
+            self.thread_web = threading.Thread(target=self.cam_capture)
+
         self.thread_web.start()
 
         # Init microphone monitoring
