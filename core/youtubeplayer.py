@@ -238,9 +238,9 @@ class YouTubePlayer(Gtk.Box):
         MPRIS.dbus = pkg_resources.resource_string(
             __name__, "mpris/mpris.xml").decode("utf-8")
         self.mpris.player = self
-        # bus = SessionBus()
-        # bus.publish('org.mpris.MediaPlayer2.YouTubePlayer', self.mpris,
-        #             ("/org/mpris/MediaPlayer2", self.mpris))
+        bus = SessionBus()
+        # bus.publish('org.mpris.MediaPlayer2.YouTubePlayer',
+        #             self.mpris, ("/org/mpris/MediaPlayer2", self.mpris))
 
     def onDraw(self, w, cr):
         cr.set_source_rgb(0, 0, 0)
@@ -502,14 +502,6 @@ class YouTubePlayer(Gtk.Box):
             libgdk.gdk_quartz_window_get_nsview.argtypes = [ctypes.c_void_p]
             handle = libgdk.gdk_quartz_window_get_nsview(gpointer)
             self.player.set_nsobject(handle)
-            """
-            gdkdll = ctypes.CDLL('libgdk-3.0.dylib')
-            get_nsview = gdkdll.gdk_quaerz_window_get_nsview
-            get_nsview.restype, get_nsview.argtypes = [ctypes.c_void_p], ctypes.c_void_p
-            nsobject = get_nsview(util.get_window_pointer(widget.get_window()))
-            print("\nnsobject", nsobject)
-            self.player.set_nsobject(nsobject)
-            """
         else:
             xid = widget.get_window().get_xid()
             self.player.set_xwindow(xid)
