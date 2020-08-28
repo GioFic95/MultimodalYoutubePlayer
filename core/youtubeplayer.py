@@ -616,7 +616,7 @@ class YouTubePlayer(Gtk.Box):
                 metadata['album'] + '\n' + metadata['artist'],
                 icon_path).show()
 
-        self.player.audio_set_volume(100)
+        self.player.audio_set_volume(75)
         GObject.idle_add(self.currentTime.show)
         GObject.idle_add(self.seekBar.show)
         GObject.idle_add(self.totalTime.show)
