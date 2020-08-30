@@ -23,11 +23,13 @@ def detect(img_name):
     x = requests.post(url, files=files)
     print(x.text)
     res = json.loads(x.text)
-    face_token = res['faces'][0]['face_token']
-    smile = res['faces'][0]['attributes']['smile']
-    emotions = res['faces'][0]['attributes']['emotion']
-    emotion = Counter(emotions).most_common(1)[0][0]
-    return face_token, smile, emotion
+    if res['faces']:
+        face_token = res['faces'][0]['face_token']
+        smile = res['faces'][0]['attributes']['smile']
+        emotions = res['faces'][0]['attributes']['emotion']
+        emotion = Counter(emotions).most_common(1)[0][0]
+        return face_token, smile, emotion
+    return None, None, None
 
 
 def faceset(face_tokens, set_name=faceset_name):

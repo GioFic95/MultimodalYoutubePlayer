@@ -69,7 +69,7 @@ class MainWindow(Gtk.Window):
             else:
                 self.thread_web = threading.Thread(target=self.cam_capture)
         except:
-            self.thread_web = threading.Thread(target=self.cam_capture)
+            self.thread_web = threading.Thread(target=self.web_capture)
 
         self.thread_web.start()
 
@@ -149,8 +149,13 @@ class MainWindow(Gtk.Window):
                             print(gesture, "-> nothing")
 
                 elif self.can_register:
-                    face_token, smile, emotion = face.detect(img_name)
-                    print("emotion:", emotion)
+                    try:
+                        face_token, smile, emotion = face.detect(img_name)
+                        if face_token is None:
+                            continue
+                        print("emotion:", emotion)
+                    except:
+                        GLib.idle_add(self.infoLabel.set_text, "Face detection error.")
                     match = face.search(face_token)
                     print("match:", match)
                     match = hashlib.sha256(match.encode()).hexdigest()
@@ -231,6 +236,8 @@ class MainWindow(Gtk.Window):
                 elif self.can_register:
                     try:
                         face_token, smile, emotion = face.detect(img_name)
+                        if face_token is None:
+                            continue
                         print("emotion:", emotion)
                     except:
                         GLib.idle_add(self.infoLabel.set_text, "Face detection error.")

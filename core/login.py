@@ -46,10 +46,10 @@ class LoginBox(Gtk.Box):
         psw = hashlib.sha256(self.password_entry.get_text().encode()).hexdigest()
         query = f"SELECT username, deaf FROM users WHERE username='{user}' AND psw='{psw}';"
         users = util.execute_query(query).fetchall()
-        deaf = users[0][1]
-        print("login deaf:", deaf)
 
         if len(users) == 1:
+            deaf = users[0][1]
+            print("login deaf:", deaf)
             img = util.get_last_pic("opencv_frame")
             face_token, _, emotion = face.detect(img)
             go_to_playlist(self, user, deaf, emotion)
@@ -184,7 +184,7 @@ def go_to_playlist(parent, user, deaf, emotion):
     }
 
     parent.infoLabel.set_text(f"Welcome {user}.")
-    playlist = playlists[deaf][emotion] if emotion in playlists[deaf] else "neutral"
+    playlist = playlists[deaf][emotion] if emotion in playlists[deaf] else playlists[deaf]["neutral"]
     parent.window.youtube.entry.set_text(playlist)
     parent.window.youtube.show_button(parent.window)
     parent.hide()
