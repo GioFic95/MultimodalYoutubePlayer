@@ -21,15 +21,15 @@ def detect(img_name):
         'return_attributes': (None, 'smiling,emotion'),
     }
     x = requests.post(url, files=files)
-    print(x.text)
     res = json.loads(x.text)
-    if res['faces']:
+    if "faces" in res:
         face_token = res['faces'][0]['face_token']
         smile = res['faces'][0]['attributes']['smile']
         emotions = res['faces'][0]['attributes']['emotion']
         emotion = Counter(emotions).most_common(1)[0][0]
         return face_token, smile, emotion
-    return None, None, None
+    else:
+        return None, None, None
 
 
 def faceset(face_tokens, set_name=faceset_name):
@@ -43,10 +43,10 @@ def faceset(face_tokens, set_name=faceset_name):
         'face_tokens': (None, ",".join(face_tokens))
     }
     x = requests.post(url, files=files)
-    print('faceset ', x)
+    # print('faceset ', x.text)
 
 
-def search(face_token, set_name=faceset_name):
+def search(face_token, set_name=faceset_name, t='1e-4'):
     """see https://console.faceplusplus.com/documents/5681455"""
     url = 'https://api-us.faceplusplus.com/facepp/v3/search'
     files = {
@@ -57,7 +57,12 @@ def search(face_token, set_name=faceset_name):
     }
     x = requests.post(url, files=files)
     res = json.loads(x.text)
-    # print(len(res['results']))
+    # print(res)
+    threshold = res['thresholds'][t]
+    confidence = res['results'][0]['confidence']
     match_face_token = res['results'][0]['face_token']
-    return match_face_token
-
+    # print(threshold, confidence, match_face_token)
+    if confidence >= threshold:
+        return match_face_token
+    else:
+        return None

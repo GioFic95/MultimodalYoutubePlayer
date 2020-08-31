@@ -156,7 +156,10 @@ class MainWindow(Gtk.Window):
                         print("emotion:", emotion)
                     except:
                         GLib.idle_add(self.infoLabel.set_text, "Face detection error.")
+                        continue
                     match = face.search(face_token)
+                    if match is None:
+                        continue
                     print("match:", match)
                     match = hashlib.sha256(match.encode()).hexdigest()
                     cursor = util.execute_query(f"SELECT username, deaf FROM users WHERE faces LIKE '%{match}%';")
@@ -241,7 +244,10 @@ class MainWindow(Gtk.Window):
                         print("emotion:", emotion)
                     except:
                         GLib.idle_add(self.infoLabel.set_text, "Face detection error.")
+                        continue
                     match = face.search(face_token)
+                    if match is None:
+                        continue
                     print("match:", match)
                     match = hashlib.sha256(match.encode()).hexdigest()
                     cursor = util.execute_query(f"SELECT username, deaf FROM users WHERE faces LIKE '%{match}%';")
