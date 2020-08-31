@@ -1,3 +1,4 @@
+import pprint
 import requests
 import time
 import glob
@@ -100,7 +101,6 @@ def test_gesture_detection():
     # print("len pictures 2", len(pictures))
 
     for p in pictures:
-        # print(p)
         gt_user, gt_gesture0 = os.path.splitext(os.path.basename(p))[0].split("_")[0:2]
         gt_gesture = GESTURES[gt_gesture0]
 
@@ -112,7 +112,6 @@ def test_gesture_detection():
         }
         x = requests.post(url, files=files)
         hands = json.loads(x.text)['hands']
-        # print("hands:", hands)
         for h in hands:
             num_hands += 1
             gesture = Counter(h["gesture"]).most_common(1)[0][0]
@@ -129,7 +128,7 @@ def test_gesture_detection():
 
     print("num hands:", num_hands)
     print(f"Correct gestures (accuracy): {correct_gestures}/{len(pictures)}: {correct_gestures / len(pictures)};")
-    print(gestures_matrix)
+    pprint.pprint(gestures_matrix)
 
 
 if __name__ == '__main__':
