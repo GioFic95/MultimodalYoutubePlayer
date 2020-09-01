@@ -58,11 +58,14 @@ def search(face_token, set_name=faceset_name, t='1e-4'):
     x = requests.post(url, files=files)
     res = json.loads(x.text)
     # print(res)
-    threshold = res['thresholds'][t]
-    confidence = res['results'][0]['confidence']
-    match_face_token = res['results'][0]['face_token']
-    # print(threshold, confidence, match_face_token)
-    if confidence >= threshold:
-        return match_face_token
-    else:
+    try:
+        threshold = res['thresholds'][t]
+        confidence = res['results'][0]['confidence']
+        match_face_token = res['results'][0]['face_token']
+        # print(threshold, confidence, match_face_token)
+        if confidence >= threshold:
+            return match_face_token
+        else:
+            return None
+    except:
         return None

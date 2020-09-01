@@ -101,7 +101,7 @@ class MainWindow(Gtk.Window):
                     print("failed to retrieve frame")
                     continue
 
-                img_name = f"images/test-img/opencv_frame_{img_counter}.png"
+                img_name = f"images/test-img/frame_{img_counter}.png"
                 cv.imwrite(img_name, frame)
                 print(ts, f"{img_name} written!")
 
@@ -179,7 +179,7 @@ class MainWindow(Gtk.Window):
         print("start web capture")
         img_counter = 0
         while self.running_web:
-            img_name = f"images/test-img/gphoto_{img_counter}.jpg"
+            img_name = f"images/test-img/frame_{img_counter}.jpg"
             cmd = f"gphoto2 --capture-image-and-download --filename {img_name} --force-overwrite"
             args = shlex.split(cmd)
             s = subprocess.Popen(args, stderr=subprocess.PIPE)
@@ -319,13 +319,17 @@ class MainWindow(Gtk.Window):
             time.sleep(.5)
 
     def show_info(self, text):
-        def _show_info():
-            t = self.infoLabel.get_text()
-            GLib.idle_add(self.infoLabel.set_markup, f"<b>{text}</b>")
-            time.sleep(3)
-            GLib.idle_add(self.infoLabel.set_text, t)
-
-        threading.Thread(target=_show_info).start()
+        # def _show_info():
+        #     t = self.infoLabel.get_text()
+        #     GLib.idle_add(self.infoLabel.set_markup, f"<b>{text}</b>")
+        #     time.sleep(3)
+        #     GLib.idle_add(self.infoLabel.set_text, t)
+        #
+        # threading.Thread(target=_show_info).start()
+        t = self.infoLabel.get_text()
+        GLib.idle_add(self.infoLabel.set_markup, f"<b>{text}</b>")
+        time.sleep(3)
+        GLib.idle_add(self.infoLabel.set_text, t)
 
     def quit(self, widget=None, *data):
         self.running_mic = False

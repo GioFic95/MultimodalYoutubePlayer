@@ -128,32 +128,15 @@ class RegistrationDialog(Gtk.Dialog):
         face_tokens = []
         emotions = []
 
-        DELAY = 1.1
-        img_count = 0
-        ts = time.time()
-        cam = cv.VideoCapture(0)
-        while True:
-            ret = cam.grab()
-            if not ret:
-                print("failed to grab frame")
-                continue
-            if time.time() - ts >= DELAY:
-                ret, frame = cam.retrieve()
-                if not ret:
-                    print("failed to retrieve frame")
-                    continue
-
-                img_name = f"images/test-img/registration_frame_{img_count}.png"
-                cv.imwrite(img_name, frame)
-                face_token, _, emotion = face.detect(img_name)
-                print("emotion:", emotion)
-                face_tokens.append(face_token)
-                emotions.append(emotion)
-                GLib.idle_add(self.label.set_text, f"Thank you, picture number {img_count + 1} taken!")
-                img_count += 1
-
-                if img_count == 3:
-                    break
+        for i in range(3):
+            if i > 0:
+                time.sleep(1.11)
+            img_name = util.get_last_pic("frame")
+            face_token, _, emotion = face.detect(img_name)
+            print("emotion:", emotion)
+            face_tokens.append(face_token)
+            emotions.append(emotion)
+            GLib.idle_add(self.label.set_text, f"Thank you, picture number {i + 1} taken!")
 
         face.faceset(face_tokens)
         face_tokens = [hashlib.sha256(token.encode()).hexdigest() for token in face_tokens]
